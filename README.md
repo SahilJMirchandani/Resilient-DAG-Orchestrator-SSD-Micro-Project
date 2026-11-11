@@ -252,3 +252,11 @@ The test suite includes coverage for API behavior, DAG validation, workflow exec
 ---
 
 **Resilient DAG Orchestrator (ORBIT)** — SSD Micro Project
+
+## Deploy on Render
+
+The root `render.yaml` configures a free Node.js web service. Connect this
+repository in Render and deploy the Blueprint; Render builds the frontend and
+backend, starts the API server, and checks `/api/health`. The free service uses
+ephemeral storage, so its SQLite execution history and generated CSV exports
+can be lost after a restart or redeploy.

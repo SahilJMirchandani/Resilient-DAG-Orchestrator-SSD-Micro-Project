@@ -1,0 +1,40 @@
+{
+  "name": "resilient-dag-orchestrator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "build:app": "npm run build && npm run build:frontend",
+    "build:frontend": "vite build --config frontend\\vite.config.js",
+    "dev": "vite --config frontend\\vite.config.js",
+    "start": "node dist/server.js",
+    "typecheck:tests": "tsc -p tsconfig.test.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "express": "^5.3.0",
+    "lucide-react": "^1.71.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/supertest": "^7.2.1",
+    "@vitejs/plugin-react": "^6.3.0",
+    "supertest": "^7.3.2",
+    "typescript": "^5.9.2",
+    "vite": "^8.3.7",
+    "vitest": "^5.1.0"
+  }
+}

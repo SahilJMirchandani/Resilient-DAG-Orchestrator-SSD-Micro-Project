@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: resilient-dag-orchestrator
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build:app
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: DATABASE_PATH
+        value: ./data/orchestrator.sqlite
