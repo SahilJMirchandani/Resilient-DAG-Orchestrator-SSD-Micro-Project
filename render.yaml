@@ -3,7 +3,7 @@ services:
     name: resilient-dag-orchestrator-ssd-micro
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run build:app
+    buildCommand: npm ci --include=dev && npm run build:app
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
