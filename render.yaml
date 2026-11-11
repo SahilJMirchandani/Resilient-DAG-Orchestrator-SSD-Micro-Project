@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: resilient-dag-orchestrator
+    name: resilient-dag-orchestrator-ssd-micro
     runtime: node
     plan: free
     buildCommand: npm ci && npm run build:app
