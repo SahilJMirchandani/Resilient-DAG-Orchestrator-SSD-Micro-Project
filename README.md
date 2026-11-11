@@ -1,4 +1,4 @@
-# Resilient-DAG-Orchestrator-SSD-Micro-Project (ORBIT)
+# Resilient DAG Orchestrator (ORBIT)
 
 A local-first workflow orchestration application that executes predefined Directed Acyclic Graphs (DAGs), manages task dependencies, and demonstrates how a workflow can respond to failures and recover from interruptions.
 
@@ -8,13 +8,13 @@ The project combines a TypeScript orchestration engine, an Express REST API, SQL
 
 ## Key Features
 
-- **DAG validation:** Checks workflow and task identifiers, dependencies, duplicate tasks, self-dependencies, invalid task options, and circular dependencies before execution.
-- **Dependency-aware scheduling:** Runs tasks only after their prerequisites have completed, with a configurable concurrency limit for each workflow.
-- **Failure handling:** Supports retries with capped exponential backoff, task timeouts, cooperative cancellation through `AbortSignal`, and failure isolation between independent branches.
-- **Circuit breaker:** Demonstrates the `CLOSED`, `OPEN`, and `HALF_OPEN` states to protect a task that represents an external service.
-- **Persistent execution history:** Stores workflow definitions, execution and task states, attempt history, outputs, circuit-breaker snapshots, and logs in SQLite.
-- **Restart recovery:** Detects unfinished work when the backend starts again and resumes interrupted tasks while preserving completed task results.
-- **Execution dashboard:** Displays run statistics, recent executions, workflow templates, task-level status, attempt counts, outputs, and timestamped logs.
+- **DAG validation:** checks workflow and task identifiers, dependencies, duplicate tasks, self-dependencies, invalid task options, and circular dependencies before execution.
+- **Dependency-aware scheduling:** runs tasks only after their prerequisites have completed and applies a workflow-specific concurrency limit. The supplied CSV and text-analysis templates use a limit of 2; the resilience template uses a limit of 3. These limits are defined in the backend templates, not edited through the dashboard.
+- **Failure handling:** supports retries with capped exponential backoff, task timeouts, cooperative cancellation through `AbortSignal`, and failure isolation between independent branches.
+- **Circuit breaker:** demonstrates the `CLOSED`, `OPEN`, and `HALF_OPEN` states to protect a task that represents an external service.
+- **Persistent execution history:** stores workflow definitions, execution and task states, attempt history, outputs, circuit-breaker snapshots, and logs in SQLite.
+- **Restart recovery:** detects unfinished work when the backend starts again and resumes interrupted tasks while preserving completed task results.
+- **Execution dashboard:** displays run statistics, recent executions, workflow templates, task-level status, attempt counts, outputs, and timestamped logs.
 
 ## Workflow Templates
 
@@ -36,13 +36,13 @@ A demonstration workflow for testing task failures and recovery. Its main branch
 
 Available scenarios include:
 
-- **No injected failure:** Runs the workflow without a deliberate failure.
-- **Temporary failure:** Makes the first external-service attempt fail so the retry and circuit-breaker recovery path can be observed.
-- **Permanent failure:** Keeps the external-service task failing until its configured attempts are exhausted.
-- **Slow task:** Delays a task so its timeout behavior can be examined.
-- **Independent branch failure:** Fails the health-check branch while the report branch continues.
+- **No injected failure:** runs the workflow without a deliberate failure.
+- **Temporary failure:** makes the first external-service attempt fail so the retry and circuit-breaker recovery path can be observed.
+- **Permanent failure:** keeps the external-service task failing until its configured attempts are exhausted.
+- **Slow task:** delays a task so its timeout behavior can be examined.
+- **Independent branch failure:** fails the health-check branch while the report branch continues.
 
-The template also supports a configurable random failure probability, maximum attempts, task timeout, and artificial delay. Execution logs show task attempts and circuit-breaker state changes.
+The template also supports a configurable random failure probability, maximum attempts, task timeout, and artificial delay. Execution logs show task attempts and circuit-breaker state changes. The external-service behavior is simulated: the task returns sample records and injects controlled failures; it does not call a real third-party service.
 
 ### 3. Text Analysis Pipeline
 
@@ -68,18 +68,16 @@ Accepts non-empty text of up to **100,000 characters**, validates it, and genera
 
 ```mermaid
 flowchart TD
-    UI[React Dashboard - ORBIT] --> API[Express REST API]
-    API --> ENGINE[Workflow Engine]
+    UI[React Dashboard - ORBIT] <--> API[Express REST API]
+    API <--> ENGINE[Workflow Engine]
     ENGINE --> VALIDATOR[DAG Validation]
     ENGINE --> SCHEDULER[Dependency Scheduler]
     SCHEDULER --> HANDLERS[Built-in and Template Task Handlers]
     ENGINE --> BREAKER[Circuit Breaker]
     ENGINE <--> STORE[(SQLite Execution Store)]
-    STORE --> HISTORY[Execution History, Attempts and Logs]
-    HISTORY --> UI
 ```
 
-The frontend communicates with the backend through the `/api` routes. The workflow engine validates a workflow, schedules eligible tasks, invokes their handlers, and records execution details in SQLite. The dashboard retrieves this information through the REST API.
+The frontend communicates with the backend through the `/api` routes; it does not connect directly to SQLite. The workflow engine validates each workflow, schedules eligible tasks, invokes their handlers, and records execution details in SQLite. The Express API exposes stored execution history and dashboard statistics to the frontend.
 
 ## Getting Started
 
@@ -183,27 +181,43 @@ Send this body to `POST /api/executions`. The API responds with **`202 Accepted`
 
 ```text
 Resilient_DAG_Orchestrator/
-├── src/
-│   ├── app.ts                 # Express API routes and request validation
-│   ├── builtins.ts            # Reusable task handlers
-│   ├── circuit-breaker.ts     # Circuit-breaker state management
-│   ├── csv.ts                 # CSV parsing and serialization
-│   ├── dag.ts                 # DAG validation and topological sorting
-│   ├── engine.ts              # Workflow scheduling and task execution
-│   ├── server.ts              # Server startup and shutdown
-│   ├── store.ts               # SQLite persistence and recovery data
-│   ├── templates.ts           # Workflow templates and task handlers
-│   └── types.ts               # Shared workflow and execution types
-├── frontend/
-│   └── src/                   # React application and styles
-├── tests/                     # API, DAG, engine, breaker and recovery tests
 ├── data/
-│   ├── sample.csv             # Included CSV input
-│   └── exports/               # Generated processed CSV files
-├── dist/                      # Compiled backend output
-├── frontend-dist/             # Production frontend build
+│   ├── exports/                # Generated CSV exports (may contain prior run outputs)
+│   └── sample.csv              # Included sample input
+├── dist/                       # Compiled backend JavaScript and declarations
+├── frontend/
+│   ├── index.html              # Vite HTML entry point
+│   ├── vite.config.js          # Frontend development/build configuration
+│   └── src/
+│       ├── api.js              # Frontend API client
+│       ├── App.jsx             # ORBIT dashboard and views
+│       ├── main.jsx            # React entry point
+│       └── styles.css          # Dashboard styles
+├── frontend-dist/              # Production frontend build
+├── src/
+│   ├── app.ts                  # Express API routes and request validation
+│   ├── builtins.ts             # Reusable task handlers
+│   ├── circuit-breaker.ts      # Circuit-breaker state management
+│   ├── csv.ts                  # CSV parsing and serialization
+│   ├── dag.ts                  # DAG validation and topological sorting
+│   ├── engine.ts               # Workflow scheduling and task execution
+│   ├── index.ts                # Public module exports
+│   ├── server.ts               # Server startup and shutdown
+│   ├── store.ts                # SQLite persistence and recovery data
+│   ├── templates.ts            # Workflow templates and task handlers
+│   └── types.ts                # Shared workflow and execution types
+├── tests/
+│   ├── api.test.ts
+│   ├── circuit-breaker.test.ts
+│   ├── dag.test.ts
+│   ├── engine.test.ts
+│   └── recovery.test.ts
+├── .gitignore
+├── package-lock.json
 ├── package.json
-└── README.md
+├── README.md
+├── tsconfig.json
+└── tsconfig.test.json
 ```
 
 `dist/` and `frontend-dist/` are generated by the build scripts. The SQLite database is created under `data/` by default.
@@ -230,10 +244,10 @@ The test suite includes coverage for API behavior, DAG validation, workflow exec
 
 ## Design Notes and Limitations
 
-- **At-least-once recovery:** An interrupted task may run again after a restart. The engine preserves completed task results, but exactly-once execution is not guaranteed. Task handlers that cause external side effects should therefore be idempotent.
-- **Cooperative timeouts:** Task handlers receive an `AbortSignal`. A timeout or cancellation can request that a handler stop, but it cannot forcibly terminate arbitrary JavaScript work that ignores the signal.
-- **Single-process circuit breakers:** Breaker state is persisted for restart recovery, but the implementation is local to one backend process; it is not a distributed circuit breaker for multiple server instances.
-- **Fixed workflow templates:** The current interface supports the three templates described above rather than user-authored DAGs or editable dependency graphs.
+- **At-least-once recovery:** an interrupted task may run again after a restart. The engine preserves completed task results, but exactly-once execution is not guaranteed. Task handlers that cause external side effects should therefore be idempotent.
+- **Cooperative timeouts:** task handlers receive an `AbortSignal`. A timeout or cancellation can request that a handler stop, but it cannot forcibly terminate arbitrary JavaScript work that ignores the signal.
+- **Single-process circuit breakers:** breaker state is persisted for restart recovery, but the implementation is local to one backend process; it is not a distributed circuit breaker for multiple server instances.
+- **Fixed workflow templates:** the current interface supports the three templates described above rather than user-authored DAGs or editable dependency graphs.
 
 ---
 
